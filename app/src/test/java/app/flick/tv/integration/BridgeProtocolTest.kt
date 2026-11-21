@@ -31,6 +31,15 @@ class BridgeProtocolTest {
         rejected { BridgeProtocol.event(command("open_camera", camera.put("url", "https://example.test/stream"))) }
     }
 
+    @Test fun appLaunchAcceptsOnlyAnAndroidPackageName() {
+        val data = JSONObject().put("package_name", "org.jellyfin.androidtv")
+        val request = BridgeProtocol.event(command("launch_app", data)) as BridgeEvent.Command
+        assertEquals(BridgeCommandType.LaunchApp, request.value.type)
+        rejected { BridgeProtocol.event(command("launch_app", JSONObject())) }
+        rejected { BridgeProtocol.event(command("launch_app", JSONObject().put("package_name", "org.jellyfin/androidtv"))) }
+        rejected { BridgeProtocol.event(command("launch_app", data.put("activity", "MainActivity"))) }
+    }
+
     @Test fun rejectsUnknownVersionCommandAndFields() {
         rejected { BridgeProtocol.event(command(version = 2)) }
         rejected { BridgeProtocol.event(command("execute_shell")) }

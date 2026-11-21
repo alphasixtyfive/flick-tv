@@ -15,3 +15,10 @@ internal fun LauncherSettings.withChildApp(profileId: String, app: String, allow
     } else apps.remove(app)
     return copy(profiles = profiles.map { if (it.id == profileId) it.copy(allowedApps = apps.toList()) else it })
 }
+
+internal fun LauncherSettings.withoutProfile(profileId: String): LauncherSettings {
+    val remaining = profiles.filterNot { it.id == profileId }
+    val fallback = remaining.firstOrNull { !it.child } ?: error("Keep at least one adult profile")
+    val selected = activeProfileId.takeIf { id -> remaining.any { it.id == id } } ?: fallback.id
+    return copy(profiles = remaining, activeProfileId = selected)
+}

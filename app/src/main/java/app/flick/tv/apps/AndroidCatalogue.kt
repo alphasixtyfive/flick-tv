@@ -93,10 +93,12 @@ class AndroidCatalogue(context: Context) {
         catch (_: Exception) { emptyList() }
     }
 
-    fun launch(packageName: String) {
+    fun launch(packageName: String, tvOnly: Boolean = false) {
+        require(packageName != context.packageName) { "Choose another app" }
         val manager = context.packageManager
-        val intent = manager.getLeanbackLaunchIntentForPackage(packageName) ?: manager.getLaunchIntentForPackage(packageName)
-        requireNotNull(intent) { "This app is no longer installed" }
+        val intent = manager.getLeanbackLaunchIntentForPackage(packageName)
+            ?: if (tvOnly) null else manager.getLaunchIntentForPackage(packageName)
+        requireNotNull(intent) { "This app cannot be launched" }
         context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
 

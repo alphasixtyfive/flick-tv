@@ -10,6 +10,7 @@ import app.flick.tv.notifications.NoticeAction
 import app.flick.tv.notifications.TvNotice
 import app.flick.tv.profiles.Profile
 import app.flick.tv.profiles.ProfileSecurity
+import app.flick.tv.profiles.withoutProfile
 import app.flick.tv.themes.ThemeCatalog
 import app.flick.tv.wallpaper.WallpaperPhoto
 import kotlinx.coroutines.Dispatchers
@@ -52,12 +53,11 @@ internal class LauncherCommands(private val runtime: FlickRuntime) {
         }
         check(bridge.allowManagement) { "Allow launcher management in Flick settings first" }
         return runtime.withAdultSession { when (command.type) {
-            BridgeCommandType.LaunchApp -> withContext(Dispatchers.Main.immediate) {
+            BridgeCommandType.LaunchApp -> {
                 check(runtime.isLauncherVisible() && runtime.isScreenOn()) { "Open Flick TV Home first" }
                 val packageName = command.data.getString("package_name")
                 check(runtime.canLaunch(packageName)) { "Choose an adult profile first" }
-                require(runtime.catalogue.apps().any { it.packageName == packageName }) { "Choose an installed TV app" }
-                runtime.catalogue.launch(packageName)
+                runtime.catalogue.launch(packageName, tvOnly = true)
                 JSONObject()
             }
             BridgeCommandType.OpenCamera -> {
@@ -118,10 +118,7 @@ internal class LauncherCommands(private val runtime: FlickRuntime) {
                     }
                     BridgeCommandType.DeleteProfile -> {
                         requireNotNull(existing) { "This profile no longer exists" }
-                        val people = settings.profiles.filterNot { it.id == id }
-                        require(people.any { !it.child }) { "Keep at least one adult profile" }
-                        settings.copy(profiles = people, activeProfileId = settings.activeProfileId.takeIf { it != id }
-                            ?: people.first { !it.child }.id)
+                        settings.withoutProfile(id)
                     }
                     else -> {
                         var profile = (existing ?: Profile(id, data.optString("name"))).copy(
@@ -138,8 +135,13 @@ internal class LauncherCommands(private val runtime: FlickRuntime) {
                     }
                 }
                 runtime.store.save(updated)
-                val selected = updated.profiles.first { it.id == updated.activeProfileId }
-                check(runtime.profileSession.authorize(runtime.store.state.value, selected, generation)) { "Choose an adult profile again" }
+                val authorized = if (command.type == BridgeCommandType.SelectProfile) {
+                    val selected = updated.profiles.first { it.id == updated.activeProfileId }
+                    runtime.profileSession.authorize(runtime.store.state.value, selected, generation)
+                } else {
+                    runtime.profileSession.renewAfterEdit(runtime.store.state.value, generation)
+                }
+                check(authorized) { "Choose an adult profile again" }
             }
         } finally { runtime.switchingProfile = false; runtime.reconcileProfileSession() }
         return status()

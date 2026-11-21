@@ -57,6 +57,33 @@ class ProfileSessionTest {
         assertTrue(session.authorize(settings, adult, session.state.value.generation))
     }
 
+    @Test fun deletingTheUnlockedAdultDoesNotUnlockTheReplacement() {
+        val replacement = adult.copy(id = "replacement")
+        val settings = family().copy(profiles = listOf(adult, child, replacement))
+        val session = ProfileSession(settings)
+        val generation = session.state.value.generation
+        assertTrue(session.authorize(settings, adult, generation))
+
+        val updated = settings.withoutProfile(adult.id)
+        assertEquals(replacement.id, updated.activeProfileId)
+        assertTrue(session.renewAfterEdit(updated, generation))
+        assertFalse(session.canManage(updated))
+        assertTrue(session.reconcile(updated))
+        assertFalse(session.authorize(updated, replacement, generation))
+    }
+
+    @Test fun editingTheUnlockedAdultsPinRenewsTheSameSession() {
+        val settings = family()
+        val session = ProfileSession(settings)
+        val generation = session.state.value.generation
+        assertTrue(session.authorize(settings, adult, generation))
+
+        val updated = settings.copy(profiles = listOf(adult.copy(pinHash = "c".repeat(64)), child))
+        assertFalse(session.canManage(updated))
+        assertTrue(session.renewAfterEdit(updated, generation))
+        assertTrue(session.canManage(updated))
+    }
+
     @Test fun resumeLastIsAnExplicitChoiceThatSurvivesWake() {
         val settings = family().copy(profileStartup = ProfileStartup.ResumeLast)
         val session = ProfileSession(settings)

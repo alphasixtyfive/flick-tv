@@ -48,6 +48,15 @@ internal class ProfileSession(settings: LauncherSettings) {
         mutable.value = ProfileSessionState(generation = mutable.value.generation + 1)
     }
 
+    /** Keep an unlock when its profile was edited. A replacement selection needs its own unlock. */
+    fun renewAfterEdit(settings: LauncherSettings, generation: Long): Boolean {
+        val current = mutable.value
+        if (generation != current.generation || current.authorizedProfileId == null) return false
+        if (settings.activeProfileId != current.authorizedProfileId) return true
+        val edited = settings.profiles.find { it.id == current.authorizedProfileId } ?: return false
+        return authorize(settings, edited, generation)
+    }
+
     fun cancelSelection() { mutable.value = mutable.value.copy(generation = mutable.value.generation + 1) }
 
     fun revokeOnWake(settings: LauncherSettings): Boolean {

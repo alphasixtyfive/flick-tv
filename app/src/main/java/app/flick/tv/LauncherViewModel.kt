@@ -19,6 +19,7 @@ import app.flick.tv.homeassistant.HomeAssistantRepository
 import app.flick.tv.profiles.Profile
 import app.flick.tv.profiles.ProfileSecurity
 import app.flick.tv.profiles.withChildApp
+import app.flick.tv.profiles.withoutProfile
 import app.flick.tv.settings.LauncherSettings
 import app.flick.tv.settings.SettingsCodec
 import app.flick.tv.settings.SettingsStore
@@ -158,7 +159,7 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun openContinue(item: ContinueItem) {
-        if (!adult() || state.value.continueItems.none { it.id == item.id }) return
+        if (switchingProfile || !adult() || state.value.continueItems.none { it.id == item.id }) return
         runCatching { catalogue.open(item) }.onFailure { message("This item is unavailable. Open its app instead.") }
     }
 
@@ -402,18 +403,12 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun deleteProfile(profile: Profile, onComplete: (Result<Unit>) -> Unit) {
-        profileEdit(onComplete) { settings ->
-            val people = settings.profiles.filterNot { it.id == profile.id }
-            require(people.any { !it.child }) { "Keep at least one adult profile" }
-            settings.copy(profiles = people, activeProfileId = settings.activeProfileId.takeIf { id -> people.any { it.id == id } }
-                ?: people.first { !it.child }.id)
-        }
+        profileEdit(onComplete) { it.withoutProfile(profile.id) }
     }
 
     private fun profileEdit(onComplete: (Result<Unit>) -> Unit, edit: suspend (LauncherSettings) -> LauncherSettings) {
         val job = privilegedTask {
             val owner = currentCoroutineContext().job
-            val authorizedId = runtime.profileSession.profile(store.state.value)?.id
             val generation = runtime.profileSession.state.value.generation
             switchingProfile = true
             val result = try {
@@ -424,11 +419,7 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
                     currentCoroutineContext().ensureActive()
                     check(adult() && generation == runtime.profileSession.state.value.generation) { "Choose an adult profile first" }
                     store.save(updated)
-                    // An already-authorized adult can update their own PIN; a fallback adult needs a new unlock.
-                    if (updated.activeProfileId == authorizedId) {
-                        val selected = updated.profiles.first { it.id == authorizedId }
-                        check(runtime.profileSession.authorize(store.state.value, selected, generation)) { "Choose a profile again" }
-                    }
+                    check(runtime.profileSession.renewAfterEdit(store.state.value, generation)) { "Choose a profile again" }
                 }
                 Result.success(Unit)
             } catch (cancelled: CancellationException) {

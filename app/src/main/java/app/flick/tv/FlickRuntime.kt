@@ -62,7 +62,7 @@ class FlickRuntime(context: Context) {
     val notifications = NotificationController(context, scope,
         onNavigationFeedback = { navigationSounds.play(store.state.value.navigationSound) },
         cameraStream = { camera -> withAdultSession { homeAssistant.cameraStream(camera) } },
-        canOpenCamera = { canManage() && power.isInteractive && homeAssistant.displayPower.value != HaDisplayPower.Off },
+        canOpenCamera = { !switchingProfile && canManage() && power.isInteractive && homeAssistant.displayPower.value != HaDisplayPower.Off },
     ) { action ->
         if (canManage()) scope.launch {
             runCatching { withAdultSession { bridge.notificationAction(action.noticeId, action.actionId) } }
@@ -104,6 +104,7 @@ class FlickRuntime(context: Context) {
         }
         scope.launch {
             homeAssistant.credentialRevision.drop(1).collect {
+                notifications.dismissAll()
                 runCatching { bridge.reconnect() }
             }
         }
@@ -151,7 +152,8 @@ class FlickRuntime(context: Context) {
     internal fun isScreenOn() = power.isInteractive
     internal fun isLauncherVisible() = visible
     internal fun canManage() = !store.requiresRecovery.value && profileSession.canManage(store.state.value)
-    internal fun canLaunch(packageName: String) = !store.requiresRecovery.value && profileSession.canLaunch(store.state.value, packageName)
+    internal fun canLaunch(packageName: String) = !switchingProfile && !store.requiresRecovery.value &&
+        profileSession.canLaunch(store.state.value, packageName)
 
     internal fun revokeProfileSession() {
         if (profileSession.revokeOnWake(store.state.value)) cancelSessionWork()
