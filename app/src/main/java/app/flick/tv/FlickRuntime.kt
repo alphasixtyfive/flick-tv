@@ -149,6 +149,7 @@ class FlickRuntime(context: Context) {
     fun pause() { visible = false }
 
     internal fun isScreenOn() = power.isInteractive
+    internal fun isLauncherVisible() = visible
     internal fun canManage() = !store.requiresRecovery.value && profileSession.canManage(store.state.value)
     internal fun canLaunch(packageName: String) = !store.requiresRecovery.value && profileSession.canLaunch(store.state.value, packageName)
 

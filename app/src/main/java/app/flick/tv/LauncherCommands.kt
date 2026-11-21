@@ -30,7 +30,7 @@ internal class LauncherCommands(private val runtime: FlickRuntime) {
         return JSONObject().put("version", BuildConfig.VERSION_NAME)
             .put("profile", publicProfile(profile, details = false)).put("profiles", publicProfiles(details = false))
             .put("capabilities", JSONArray(buildList {
-                add("profiles"); add("wallpapers"); add("themes"); add("home_text")
+                add("profiles"); add("wallpapers"); add("themes"); add("home_text"); add("launch_app")
                 if (runtime.notifications.state.value.overlayAllowed) {
                     add("notifications")
                     add("camera_view")
@@ -52,6 +52,14 @@ internal class LauncherCommands(private val runtime: FlickRuntime) {
         }
         check(bridge.allowManagement) { "Allow launcher management in Flick settings first" }
         return runtime.withAdultSession { when (command.type) {
+            BridgeCommandType.LaunchApp -> withContext(Dispatchers.Main.immediate) {
+                check(runtime.isLauncherVisible() && runtime.isScreenOn()) { "Open Flick TV Home first" }
+                val packageName = command.data.getString("package_name")
+                check(runtime.canLaunch(packageName)) { "Choose an adult profile first" }
+                require(runtime.catalogue.apps().any { it.packageName == packageName }) { "Choose an installed TV app" }
+                runtime.catalogue.launch(packageName)
+                JSONObject()
+            }
             BridgeCommandType.OpenCamera -> {
                 if (!runtime.isScreenOn() || !runtime.notifications.showCamera(
                     command.data.optString("title", "Camera"), command.data.getString("camera_entity_id"),

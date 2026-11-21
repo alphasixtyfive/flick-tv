@@ -70,6 +70,10 @@ object BridgeProtocol {
                 require(HaCamera.isEntity(string(data, "camera_entity_id", 135))) { "Choose a camera entity" }
                 if (data.has("title")) string(data, "title", 100)
             }
+            BridgeCommandType.LaunchApp -> {
+                keys(data, setOf("package_name"))
+                require(packageName.matches(string(data, "package_name", 256))) { "Invalid app package" }
+            }
             BridgeCommandType.Notify -> {
                 keys(data, setOf("id", "title", "message", "image", "actions", "persistent", "timeout"))
                 require(identifier.matches(string(data, "id", 64))) { "Invalid notification ID" }

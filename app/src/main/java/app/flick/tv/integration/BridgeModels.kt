@@ -28,7 +28,7 @@ enum class BridgeCommandType(val wireName: String) {
     SetTheme("set_theme"),
     SetProfile("set_profile"), DeleteProfile("delete_profile"), SelectProfile("select_profile"),
     NextWallpaper("next_wallpaper"), SetWallpaperOptions("set_wallpaper_options"),
-    SetWallpapers("set_wallpapers"), Notify("notify"), OpenCamera("open_camera"),
+    SetWallpapers("set_wallpapers"), Notify("notify"), OpenCamera("open_camera"), LaunchApp("launch_app"),
 }
 
 class BridgeCommand(val requestId: String, val type: BridgeCommandType, val data: JSONObject,
