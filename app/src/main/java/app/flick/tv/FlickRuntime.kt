@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import android.os.PowerManager
+import android.util.Log
 import app.flick.tv.apps.AndroidCatalogue
 import app.flick.tv.homeassistant.HaDisplayPower
 import app.flick.tv.homeassistant.HomeAssistantRepository
@@ -77,7 +78,7 @@ class FlickRuntime(context: Context) {
             override fun onReceive(context: Context, intent: Intent) {
                 if (intent.action == Intent.ACTION_SCREEN_OFF) {
                     notifications.closeCamera()
-                    revokeProfileSession()
+                    lockProfileForStandby("Android screen off")
                 }
             }
         }
@@ -99,7 +100,7 @@ class FlickRuntime(context: Context) {
         scope.launch {
             homeAssistant.displayPowerInterruptions.drop(1).collect {
                 notifications.closeCamera()
-                revokeProfileSession()
+                lockProfileForStandby("Home Assistant TV standby signal")
             }
         }
         scope.launch {
@@ -142,7 +143,7 @@ class FlickRuntime(context: Context) {
 
     /** Call from a visible activity: Android restricts starting services from the background. */
     fun resume() {
-        if (!power.isInteractive) revokeProfileSession()
+        if (!power.isInteractive) lockProfileForStandby("Launcher resumed with screen off")
         visible = true
         notifications.refreshPermissions()
         if (bridge.state.value.enabled) notifications.enableBackground(true)
@@ -155,8 +156,12 @@ class FlickRuntime(context: Context) {
     internal fun canLaunch(packageName: String) = !switchingProfile && !store.requiresRecovery.value &&
         profileSession.canLaunch(store.state.value, packageName)
 
-    internal fun revokeProfileSession() {
-        if (profileSession.revokeOnWake(store.state.value)) cancelSessionWork()
+    private fun lockProfileForStandby(reason: String) {
+        val wasUnlocked = profileSession.state.value.authorizedProfileId != null
+        if (profileSession.revokeOnWake(store.state.value)) {
+            if (wasUnlocked) Log.i("FlickProfile", "Profile locked: $reason")
+            cancelSessionWork()
+        }
     }
 
     internal fun reconcileProfileSession() {

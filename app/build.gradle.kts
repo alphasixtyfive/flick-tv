@@ -24,8 +24,8 @@ android {
         applicationId = "app.flick.tv"
         minSdk = 26
         targetSdk = 35
-        versionCode = 236
-        versionName = "0.2.36"
+        versionCode = 237
+        versionName = "0.2.37"
     }
     buildFeatures { compose = true; buildConfig = true }
     signingConfigs {

@@ -230,7 +230,9 @@ fun FlickScreen(state: HomeState, actions: HomeActions) {
             moving = null
         }
     }
-    BackHandler(enabled = panel == null) {
+    // Keep Back inside Flick while an animated panel is waiting for its own handler.
+    BackHandler {
+        if (panel != null) closePanel()
         moving = null
     }
 
