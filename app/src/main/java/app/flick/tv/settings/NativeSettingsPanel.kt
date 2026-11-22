@@ -3,6 +3,7 @@ package app.flick.tv.settings
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -14,8 +15,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -50,21 +52,35 @@ fun NativeSettingsPanel(
 ) {
     val settings = state.settings
     var choice by remember { mutableStateOf<SettingChoice?>(null) }
+    var returnRow by remember { mutableStateOf<SettingsPage?>(null) }
+    val returnFocus = remember { FocusRequester() }
+    fun rowFocus(child: SettingsPage): Modifier =
+        if (child == returnRow) Modifier.focusRequester(returnFocus) else Modifier
+
     val back: () -> Unit = {
         val parent = page.parent()
-        if (parent == null) onClose() else onPageChange(parent)
+        if (parent == null) {
+            onClose()
+        } else {
+            returnRow = page
+            onPageChange(parent)
+        }
     }
-    TvPanel(page.title, onBack = back) {
+    TvPanel(page.title, onBack = back, preferredFocus = returnFocus.takeIf { returnRow?.parent() == page }) {
         when (page) {
             SettingsPage.Root -> {
                 TvSettingRow("Wallpapers", icon = Icons.Default.Wallpaper, onClick = onWallpaper)
-                TvSettingRow("Home screen", icon = Icons.Default.Home, onClick = { onPageChange(SettingsPage.Home) })
+                TvSettingRow("Home screen", icon = Icons.Default.Home, modifier = rowFocus(SettingsPage.Home),
+                    onClick = { onPageChange(SettingsPage.Home) })
                 TvSettingRow("Home Assistant", detail = state.haConnectionState.label,
                     icon = FlickIcons.HomeAssistant, onClick = onHomeAssistant)
-                TvSettingRow("Clock & weather", icon = Icons.Default.Schedule, onClick = { onPageChange(SettingsPage.Clock) })
+                TvSettingRow("Clock & weather", icon = Icons.Default.Schedule, modifier = rowFocus(SettingsPage.Clock),
+                    onClick = { onPageChange(SettingsPage.Clock) })
                 TvSettingRow("Profiles", icon = Icons.Default.Person, onClick = onProfiles)
-                TvSettingRow("Device", icon = Icons.Default.Tv, onClick = { onPageChange(SettingsPage.Device) })
-                TvSettingRow("About", icon = Icons.Default.Info, onClick = { onPageChange(SettingsPage.About) })
+                TvSettingRow("Device", icon = Icons.Default.Tv, modifier = rowFocus(SettingsPage.Device),
+                    onClick = { onPageChange(SettingsPage.Device) })
+                TvSettingRow("About", icon = Icons.Default.Info, modifier = rowFocus(SettingsPage.About),
+                    onClick = { onPageChange(SettingsPage.About) })
             }
             SettingsPage.Home -> {
                 TvSettingRow("Theme", detail = app.flick.tv.themes.ThemeCatalog.resolve(settings.appearance).name,
@@ -83,7 +99,8 @@ fun NativeSettingsPanel(
                 if (settings.showContinue && state.continueAccess && settings.removedContinue.isNotEmpty()) TvSettingRow(
                     "Restore Continue watching", detail = "Show titles removed from this row", icon = Icons.Default.Restore,
                     onClick = { actions.updateSettings(settings, settings.copy(removedContinue = emptySet())) })
-                TvSettingRow("Top buttons", icon = Icons.Default.Tune, onClick = { onPageChange(SettingsPage.TopControls) })
+                TvSettingRow("Top buttons", icon = Icons.Default.Tune, modifier = rowFocus(SettingsPage.TopControls),
+                    onClick = { onPageChange(SettingsPage.TopControls) })
                 TvSettingRow("Navigation sounds", detail = settings.navigationSound.label(), icon = Icons.AutoMirrored.Filled.VolumeUp,
                     onClick = { choice = SettingChoice.Sound })
             }
@@ -115,19 +132,24 @@ fun NativeSettingsPanel(
                 TvSettingRow("Android settings", icon = Icons.Default.Tv, onClick = actions.openAndroidSettings)
             }
             SettingsPage.About -> {
-                Column(Modifier.fillMaxWidth().padding(vertical = TvLayout.Gap),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Image(painterResource(R.drawable.flick_icon), contentDescription = null,
-                        modifier = Modifier.size(48.dp).clip(RoundedCornerShape(TvLayout.RowRadius)))
-                    Text("Flick TV", style = MaterialTheme.typography.titleMedium)
-                    Text("Version ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
-                        style = MaterialTheme.typography.bodySmall, color = FlickColors.Secondary,
-                        textAlign = TextAlign.Center)
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = TvLayout.RowHorizontalPadding, vertical = TvLayout.Gap),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(TvLayout.Gap),
+                ) {
+                    Image(
+                        painterResource(R.drawable.flick_icon),
+                        contentDescription = null,
+                        modifier = Modifier.size(48.dp).clip(RoundedCornerShape(TvLayout.RowRadius)),
+                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("Flick TV", style = MaterialTheme.typography.titleLarge)
+                        Text("Version ${BuildConfig.VERSION_NAME}",
+                            style = MaterialTheme.typography.bodySmall, color = FlickColors.Secondary)
+                    }
                 }
-                TvSettingRow("Updates", icon = Icons.Default.SystemUpdate,
-                    onClick = onUpdates)
-                TvSettingRow("Developer", detail = "@alphasixtyfive", icon = Icons.Default.Person,
+                TvSettingRow("Updates", icon = Icons.Default.SystemUpdate, onClick = onUpdates)
+                TvSettingRow("Developed by", detail = "@alphasixtyfive", icon = Icons.Default.Person,
                     onClick = { actions.openProjectLink(ProjectLinks.DEVELOPER) })
                 TvSettingRow("Source code", detail = "GitHub", icon = Icons.Default.Code,
                     onClick = { actions.openProjectLink(ProjectLinks.SOURCE) })

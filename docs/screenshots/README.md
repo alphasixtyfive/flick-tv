@@ -1,6 +1,10 @@
 # Public screenshots
 
-These images render Flick 0.2.18's production Compose screens with fictional profiles,
+[About](about.png) and [Settings focus](settings-focus.png) were captured from the
+Flick TV 0.2.36 app running on Android at 1920 × 1080 with a fresh profile and its
+built-in wallpaper. The home row shows the original artwork of installed apps.
+
+The earlier screenshots render Flick 0.2.18's production Compose screens with fictional profiles,
 illustrated avatars and sample app and Home Assistant data. The UI source is
 [`c0c99c1`](https://github.com/alphasixtyfive/flick-tv/commit/c0c99c1e5c41e8f3d382ee4e84389948b9cc115d).
 

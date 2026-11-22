@@ -56,7 +56,9 @@ for installation, remote controls, photos and permissions.
 </table>
 
 The screenshots use demo profiles. Select any image for a full-size view.
-See also [wallpapers](docs/screenshots/wallpapers.png) and [settings](docs/screenshots/settings.png).
+See also [wallpapers](docs/screenshots/wallpapers.png) and [returning to a Settings row](docs/screenshots/settings-focus.png).
+
+[![Flick TV About screen with the developer row focused](docs/screenshots/about.png)](docs/screenshots/about.png)
 
 ## Kids profiles and streaming accounts
 
