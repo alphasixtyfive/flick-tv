@@ -47,10 +47,13 @@ class AndroidCatalogue(context: Context) {
 
     suspend fun apps(): List<AppEntry> = cache.apps()
 
+    private fun homePackages() =
+        context.packageManager.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), 0)
+            .mapTo(mutableSetOf()) { it.activityInfo.packageName }
+
     private suspend fun readApps(): List<AppEntry> = withContext(Dispatchers.IO) {
         val manager = context.packageManager
-        val homes = manager.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), 0)
-            .mapTo(mutableSetOf()) { it.activityInfo.packageName }
+        val homes = homePackages()
         manager.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER), 0)
             .distinctBy { it.activityInfo.packageName }.filter { it.activityInfo.packageName != context.packageName }
             .map { item ->
@@ -111,9 +114,6 @@ class AndroidCatalogue(context: Context) {
         context.startActivity(intent)
     }
 
-    fun canUninstall(app: AppEntry): Boolean {
-        val homes = context.packageManager.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), 0)
-            .map { it.activityInfo.packageName }
-        return !app.system && app.packageName != context.packageName && app.packageName !in homes
-    }
+    fun canUninstall(app: AppEntry): Boolean =
+        !app.system && app.packageName != context.packageName && app.packageName !in homePackages()
 }

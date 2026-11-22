@@ -28,7 +28,7 @@ Flick excludes locks, alarms and gate controls.
 
 ## Pair the optional TV connection
 
-Install [Flick for Home Assistant](https://github.com/alphasixtyfive/flick-home-assistant)
+Install [Flick TV for Home Assistant](https://github.com/alphasixtyfive/flick-tv-home-assistant)
 using its setup instructions. Its current documented requirements are Home Assistant 2026.11
 or later and Flick 0.2.2 or later.
 
@@ -235,7 +235,7 @@ permission. Open Flick after a force-stop or vendor shutdown. For failed managem
 check Launcher management and the current adult session. Use **Test notification** to
 separate a connection problem from an automation trigger problem.
 
-The integration's [README](https://github.com/alphasixtyfive/flick-home-assistant),
+The integration's [README](https://github.com/alphasixtyfive/flick-tv-home-assistant),
 [Flick setup guide](../SETUP.md#home-assistant) and [protocol reference](home-assistant-protocol.md)
 cover connection details. For YAML syntax, see Home Assistant's
 [notification action](https://www.home-assistant.io/actions/notify.send_message/) and

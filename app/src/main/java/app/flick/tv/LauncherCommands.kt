@@ -55,9 +55,7 @@ internal class LauncherCommands(private val runtime: FlickRuntime) {
         return runtime.withAdultSession { when (command.type) {
             BridgeCommandType.LaunchApp -> {
                 check(runtime.isLauncherVisible() && runtime.isScreenOn()) { "Open Flick TV Home first" }
-                val packageName = command.data.getString("package_name")
-                check(runtime.canLaunch(packageName)) { "Choose an adult profile first" }
-                runtime.catalogue.launch(packageName, tvOnly = true)
+                runtime.catalogue.launch(command.data.getString("package_name"), tvOnly = true)
                 JSONObject()
             }
             BridgeCommandType.OpenCamera -> {

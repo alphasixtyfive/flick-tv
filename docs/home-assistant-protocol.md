@@ -36,6 +36,8 @@ and an object named `data`. Only the following operations are accepted:
 | `next_wallpaper` | Empty object |
 | `set_wallpaper_options` | Optional `interval_seconds`, `shuffle`, `dim_amount`; at least one |
 | `set_wallpapers` | `photos`: up to 500 HTTP(S) image URLs; `replace` defaults to true |
+| `open_camera` | `camera_entity_id` and optional `title` |
+| `launch_app` | `package_name` of an installed Android TV app |
 | `notify` | `id`, optional `title`, `message`, `image`, `actions`, `persistent`, `timeout` |
 
 Launcher management requires explicit adult approval on the TV. Home Assistant must restrict
@@ -43,6 +45,9 @@ management actions to administrators or system automations. A non-admin TV accou
 cannot switch itself into an adult profile through a Home Assistant select entity. PIN updates
 belong only in a masked admin options flow, never a domain service or an automation trace.
 Parent PINs contain exactly four digits, including leading zeroes.
+
+App launches require Flick TV Home to be visible, the screen to be awake, and
+an unlocked adult profile with launcher management enabled.
 
 The TV replies through `flick_tv/result`, including `device_id`, `device_secret`, `request_id`,
 `success`, `data` and an optional short safe error.

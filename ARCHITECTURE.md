@@ -1,7 +1,7 @@
 # Architecture
 
-Flick has one Android application module. Source lives under `app/src/main/java/app/flick/`,
-with feature tests under `app/src/test/java/app/flick/`.
+Flick TV has one Android application module. Source lives under `app/src/main/java/app/flick/tv/`,
+with feature tests under `app/src/test/java/app/flick/tv/`.
 
 ## Code layout
 
